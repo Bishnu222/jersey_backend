@@ -1,32 +1,24 @@
 const express = require("express");
 const router = express.Router();
 
-const { 
-  createUser, 
-  getUsers, 
-  getOneUser, 
-  updateUser, 
-  deleteUser 
+const {
+  createUser,
+  getUsers,
+  getOneUser,
+  updateOneUser,
+  deleteOneUser
 } = require("../../controllers/admin/usermanagement");
 
 const { authenticateUser, isAdmin } = require("../../middlewares/authorizedUser");
 
-// Apply auth middlewares to all admin user routes
-router.use(authenticateUser, isAdmin);
+// Protected route: only accessible by authenticated admins
+router.get("/users", authenticateUser, isAdmin, getUsers);
 
-// Create user (admin only)
-router.post("/", createUser);
-
-// Get all users (admin only)
-router.get("/", getUsers);
-
-// Get one user (admin only)
-router.get("/:id", getOneUser);
-
-// Update one user (admin only)
-router.put("/:id", updateUser);
-
-// Delete one user (admin only)
-router.delete("/:id", deleteUser);
+//  Common CRUD routes
+router.get("/", getUsers);              // GET all users (public or temp test route)
+router.post("/create", createUser);     // POST create new user
+router.get("/:id", getOneUser);         // GET one user by ID
+router.put("/:id", updateOneUser);      // PUT update user by ID
+router.delete("/:id", deleteOneUser);   // DELETE user by ID
 
 module.exports = router;
