@@ -5,20 +5,15 @@ const {
   createUser,
   getUsers,
   getOneUser,
-  updateOneUser,
-  deleteOneUser
+  updateUser,
+  deleteUser,
 } = require("../../controllers/admin/usermanagement");
 
-const { authenticateUser, isAdmin } = require("../../middlewares/authorizedUser");
-
-// Protected route: only accessible by authenticated admins
-router.get("/users", authenticateUser, isAdmin, getUsers);
-
-//  Common CRUD routes
-router.get("/", getUsers);              // GET all users (public or temp test route)
-router.post("/create", createUser);     // POST create new user
-router.get("/:id", getOneUser);         // GET one user by ID
-router.put("/:id", updateOneUser);      // PUT update user by ID
-router.delete("/:id", deleteOneUser);   // DELETE user by ID
+// Admin CRUD Routes
+router.post("/", createUser);               // Create user
+router.get("/", getUsers);                  // Get all users
+router.get("/:id", getOneUser);             // Get single user
+router.put("/:id", updateUser);             // Update user info
+router.delete("/:id", deleteUser);          // Delete user
 
 module.exports = router;
