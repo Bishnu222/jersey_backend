@@ -1,142 +1,55 @@
-// const Product = require("../../models/Product")
-
-// exports.createProduct = async (req, res) => {
-//     const { name, price, categoryId, userId } = req.body
-//     // validataion
-//     if (!name || !price || !categoryId || !userId) {
-//         return res.status(403).json(
-//             { success: false, message: "Missing field" }
-//         )
-//     }
-//     try {
-//         const product = new Product(
-//             {
-//                 name,
-//                 price,
-//                 categoryId,
-//                 sellerId: userId
-            
-//             }
-//         )
-//         await product.save()
-//         return res.status(200).json(
-//             {
-//                 success: true,
-//                 data: product,
-//                 message: 'New Product saved'
-//             }
-//         )
-//     } catch (err) {
-//         return res.status(500).json(
-//             {
-//                 success: false,
-//                 message: 'Server error'
-//             }
-//         )
-//     }
-// }
-
-// exports.getProducts = async (req, res) => {
-//     try {
-//         const { page = 1, limit = 10, search = "" } = 
-//             req.query
-
-//         let filter = {}
-//         if (search) {
-//             filter.$or = [
-//                 { name: 
-//                     { 
-//                         $regex: search, 
-//                         $options: 'i' 
-//                     } 
-//                 }
-//             ]
-//         }
-//         const skips = (page - 1) * limit
-
-//         const products = await Product.find(filter)
-//             .populate("categoryId", "name")
-//             .populate("sellerId","firstName email")
-//             .skip(skips)
-//             .limit(Number(limit))
-//         const total = await Product.countDocuments(filter)
-//         return res.status(200).json(
-//             {
-//                 success: true,
-//                 message: "Product fetched",
-//                 data: products,
-//                 pagination: {
-//                     total,
-//                     page: Number(page),
-//                     limit: Number(limit),
-//                     totalPages: Math.ceil(
-//                         total / limit
-//                     ) // ceil rounds number
-//                 }
-//             }
-//         )
-//     } catch (err) {
-//         console.log('getProducts', {
-//             message: err.message,
-//             stack: err.stack,
-//           });
-//         return res.status(500).json(
-//             { success: false, message: "Server error" }
-//         )
-//     }
-// }
 const Product = require("../../models/Product");
 
+// Create a new product
 exports.createProduct = async (req, res) => {
   try {
-    const { team, type, size, price, categoryId } = req.body;
+    const { team, type, size, price, quantity, categoryId } = req.body;
     const file = req.file;
 
-    // Validate required fields
-    if (!team || !type || !size || !price || !categoryId || !file) {
-      return res.status(400).json({
-        success: false,
-        message: "Missing required fields",
-      });
+    if (!team || !type || !size || !price || !quantity || !categoryId || !file) {
+      return res.status(400).json({ success: false, message: "Missing required fields" });
     }
 
-    // Validate price is a positive number
+    if (!file.mimetype.startsWith("image/")) {
+      return res.status(400).json({ success: false, message: "Uploaded file must be an image" });
+    }
+
     if (isNaN(price) || Number(price) <= 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Price must be a positive number",
-      });
+      return res.status(400).json({ success: false, message: "Price must be a positive number" });
     }
 
-    // Optional: get sellerId from auth middleware or req.body
+    if (isNaN(quantity) || Number(quantity) < 0) {
+      return res.status(400).json({ success: false, message: "Quantity must be a non-negative number" });
+    }
+
     const sellerId = req.user?.id || req.body.sellerId || null;
 
-    const product = new Product({
+    const productData = {
       team,
       type,
       size,
       price: Number(price),
+      quantity: Number(quantity),
       categoryId,
       sellerId,
-      productImage: file.filename, // store just filename; you can save full path if needed
-    });
+      productImage: file.filename,
+    };
 
+    const product = new Product(productData);
     await product.save();
 
-    return res.status(201).json({
-      success: true,
-      message: "Jersey product saved successfully",
-      data: product,
-    });
+    return res.status(201).json({ success: true, message: "Product saved successfully", data: product });
   } catch (err) {
     console.error("createProduct error:", err);
-    return res.status(500).json({
-      success: false,
-      message: "Server error",
-    });
+    if (err.name === "ValidationError") {
+      const messages = Object.values(err.errors).map(e => e.message);
+      return res.status(400).json({ success: false, message: messages.join(", ") });
+    }
+    return res.status(500).json({ success: false, message: "Server error" });
   }
 };
 
+// Get products with pagination and search
 exports.getProducts = async (req, res) => {
   try {
     const { page = 1, limit = 10, search = "" } = req.query;
@@ -154,14 +67,15 @@ exports.getProducts = async (req, res) => {
 
     const products = await Product.find(filter)
       .populate("categoryId", "name")
-      .skip(skips)
-      .limit(Number(limit));
+      .skip(Number(skips))
+      .limit(Number(limit))
+      .exec();
 
     const total = await Product.countDocuments(filter);
 
     return res.status(200).json({
       success: true,
-      message: "Products fetched",
+      message: "Products fetched successfully",
       data: products,
       pagination: {
         total,
@@ -172,9 +86,75 @@ exports.getProducts = async (req, res) => {
     });
   } catch (err) {
     console.error("getProducts error:", err);
-    return res.status(500).json({
-      success: false,
-      message: "Server error",
-    });
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+// Delete product by id
+exports.deleteProduct = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const deleted = await Product.findByIdAndDelete(id);
+    if (!deleted) {
+      return res.status(404).json({ success: false, message: "Product not found" });
+    }
+
+    return res.status(200).json({ success: true, message: "Product deleted successfully" });
+  } catch (err) {
+    console.error("deleteProduct error:", err);
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+// Update product by id
+exports.updateProduct = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { team, type, size, price, quantity, categoryId } = req.body;
+    const file = req.file;
+
+    const product = await Product.findById(id);
+    if (!product) {
+      return res.status(404).json({ success: false, message: "Product not found" });
+    }
+
+    if (team !== undefined) product.team = team;
+    if (type !== undefined) product.type = type;
+    if (size !== undefined) product.size = size;
+
+    if (price !== undefined) {
+      if (isNaN(price) || Number(price) <= 0) {
+        return res.status(400).json({ success: false, message: "Price must be a positive number" });
+      }
+      product.price = Number(price);
+    }
+
+    if (quantity !== undefined) {
+      if (isNaN(quantity) || Number(quantity) < 0) {
+        return res.status(400).json({ success: false, message: "Quantity must be a non-negative number" });
+      }
+      product.quantity = Number(quantity);
+    }
+
+    if (categoryId !== undefined) product.categoryId = categoryId;
+
+    if (file) {
+      if (!file.mimetype.startsWith("image/")) {
+        return res.status(400).json({ success: false, message: "Uploaded file must be an image" });
+      }
+      product.productImage = file.filename;
+    }
+
+    await product.save();
+
+    return res.status(200).json({ success: true, message: "Product updated successfully", data: product });
+  } catch (err) {
+    console.error("updateProduct error:", err);
+    if (err.name === "ValidationError") {
+      const messages = Object.values(err.errors).map(e => e.message);
+      return res.status(400).json({ success: false, message: messages.join(", ") });
+    }
+    return res.status(500).json({ success: false, message: "Server error" });
   }
 };

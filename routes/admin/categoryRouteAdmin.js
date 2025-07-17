@@ -1,21 +1,21 @@
 const express = require('express');
 const router = express.Router();
-// const {createCategory} = require('../../controllers/admin/categorymanagement');
 const categoryController = require('../../controllers/admin/categoryController');
-// can be implemented using single import
-const upload = require("../../middlewares/fileupload")
+const upload = require("../../middlewares/fileupload");
 
-// implement using dot function
-router.post(
-    '/', 
-    upload.single("image"),
-    // req.file, req.files from next function
-    // get image, file metadata
-    categoryController.createCategory
-);
+// Create category with image upload
+router.post('/', upload.single("image"), categoryController.createCategory);
+
+// Get all categories
 router.get('/', categoryController.getAllCategories);
+
+// Get category by id
 router.get('/:id', categoryController.getCategoryById);
-router.put('/:id',upload.single("image") ,categoryController.updateCategory);
+
+// Update category with optional new image
+router.put('/:id', upload.single("image"), categoryController.updateCategory);
+
+// Delete category
 router.delete('/:id', categoryController.deleteCategory);
 
 module.exports = router;

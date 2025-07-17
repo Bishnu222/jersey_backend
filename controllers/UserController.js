@@ -75,11 +75,11 @@ exports.loginUser = async (req, res) => {
       _id: getUser._id,
       email: getUser.email,
       username: getUser.username,
-      address: getUser.address
+      address: getUser.address,
     };
 
-    // Sign JWT token
-    const token = jwt.sign(payload, process.env.SECRET, { expiresIn: "7d" });
+    // Sign JWT token — ensure you have process.env.SECRET set or replace with your secret string
+    const token = jwt.sign(payload, process.env.SECRET || "your-secret-key", { expiresIn: "7d" });
 
     // Exclude password from response
     const { password: pwd, ...userData } = getUser._doc;

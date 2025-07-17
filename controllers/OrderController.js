@@ -14,7 +14,8 @@ exports.createOrder = async (req, res) => {
 // Get all orders (admin)
 exports.getAllOrders = async (req, res) => {
   try {
-    const orders = await Order.find().populate("userId", "username email");
+    // Populate address also because User requires it and tests expect it
+    const orders = await Order.find().populate("userId", "username email address");
     res.json(orders);
   } catch (err) {
     res.status(500).json({ message: err.message });
