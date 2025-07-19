@@ -1,12 +1,17 @@
+// models/Order.js
 const mongoose = require("mongoose");
 
 const orderSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+  userId: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: "User", 
+    required: true 
+  },
   products: [
     {
-      name: String,
-      quantity: Number,
-      price: Number,
+      name: { type: String, required: true },
+      quantity: { type: Number, required: true },
+      price: { type: Number, required: true },
       productImage: String,
     }
   ],
@@ -15,7 +20,10 @@ const orderSchema = new mongoose.Schema({
     enum: ["pending", "processing", "completed"],
     default: "pending",
   },
-  total: Number,
+  total: {
+    type: Number,
+    required: true,
+  },
   date: {
     type: Date,
     default: Date.now,
