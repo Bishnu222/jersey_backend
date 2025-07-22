@@ -6,6 +6,7 @@ const adminUserRoutes = require("./routes/admin/userRouteAdmin");
 const adminCategoryRoutes = require("./routes/admin/categoryRouteAdmin");
 const adminProductRoutes = require("./routes/admin/productRouteAdmin");
 const orderRoutes = require("./routes/orderRoutes");
+const esewaRoutes = require("./routes/esewaRoutes");
 const path = require("path");
 const cors = require("cors");
 
@@ -24,6 +25,7 @@ app.use("/api/admin/users", adminUserRoutes);
 app.use("/api/admin/category", adminCategoryRoutes);
 app.use("/api/admin/product", adminProductRoutes);
 app.use("/api/orders", orderRoutes);
+app.use("/api/esewa", esewaRoutes);
 
 // 404 handler
 app.use((req, res) => {
