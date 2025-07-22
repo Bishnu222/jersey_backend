@@ -7,7 +7,9 @@ exports.createOrder = async (req, res) => {
     const saved = await order.save();
     res.status(201).json(saved);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error('Order creation error:', err);
+    console.error('Order creation request body:', req.body);
+    res.status(500).json({ message: err.message, stack: err.stack, body: req.body });
   }
 };
 
