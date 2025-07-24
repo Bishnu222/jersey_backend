@@ -1,4 +1,6 @@
 const Product = require("../../models/Product");
+const Notification = require("../../models/Notification");
+const User = require("../../models/User");
 
 // Create a new product
 exports.createProduct = async (req, res) => {
@@ -37,6 +39,17 @@ exports.createProduct = async (req, res) => {
 
     const product = new Product(productData);
     await product.save();
+
+    // Notify all users (not admins) about the new product
+    const users = await User.find({ role: "user" }, "_id");
+    const notifications = users.map((user) => ({
+      userId: user._id,
+      message: `A new product has been added: ${product.team || product.name || "New Jersey"}`,
+      type: "promotion",
+    }));
+    if (notifications.length > 0) {
+      await Notification.insertMany(notifications);
+    }
 
     return res.status(201).json({ success: true, message: "Product saved successfully", data: product });
   } catch (err) {
@@ -87,6 +100,19 @@ exports.getProducts = async (req, res) => {
   } catch (err) {
     console.error("getProducts error:", err);
     return res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+// Get a single product by ID
+exports.getProductById = async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id).populate('categoryId', 'name');
+    if (!product) {
+      return res.status(404).json({ success: false, message: 'Product not found' });
+    }
+    return res.status(200).json({ success: true, data: product });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: 'Server error' });
   }
 };
 
