@@ -49,6 +49,11 @@ exports.createProduct = async (req, res) => {
     }));
     if (notifications.length > 0) {
       await Notification.insertMany(notifications);
+      // Emit real-time notification to each user
+      const io = req.app.get('io');
+      notifications.forEach((notif) => {
+        io.to(notif.userId.toString()).emit('notification', notif);
+      });
     }
 
     return res.status(201).json({ success: true, message: "Product saved successfully", data: product });
