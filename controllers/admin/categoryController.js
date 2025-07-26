@@ -3,7 +3,7 @@ const Category = require('../../models/Category');
 // Create a new category
 exports.createCategory = async (req, res) => {
   try {
-    const filename = req.file?.path; // multer file path
+    const filename = req.file?.filename; // Store filename instead of full path
     const category = new Category({ name: req.body.name, filepath: filename });
     await category.save();
     return res.status(201).json({
@@ -45,7 +45,7 @@ exports.updateCategory = async (req, res) => {
   try {
     const updateData = { name: req.body.name };
     if (req.file) {
-      updateData.filepath = req.file.path;
+      updateData.filepath = req.file.filename; // Store filename instead of full path
     }
 
     const category = await Category.findByIdAndUpdate(
